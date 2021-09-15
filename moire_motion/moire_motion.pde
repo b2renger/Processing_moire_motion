@@ -4,7 +4,7 @@
 int W = 1080;
 int H = 1080;
 int numberOfFrames =7;
-int pixelRatio = 1;
+int pixelRatio = 4;
 
 ArrayList <Layer> layers ;
 PGraphics filter;
@@ -28,18 +28,22 @@ void setup() {
 
   filter = createGraphics(W, H);
   filter.beginDraw();
+  filter.noStroke();
   for (int i = 0; i < filter.width; i+= pixelRatio) {
-    filter.strokeWeight(pixelRatio);
+   // filter.strokeWeight(pixelRatio);
+   
     if (i%numberOfFrames == 0) {
-      filter.stroke(255, 0);
+      filter.fill(255, 0);
     } else {
-      filter.stroke(0);
+      filter.fill(0);
     }
-    filter.line(i, 0, i, filter.height);
+    //filter.line(i, 0, i, filter.height);
+    filter.rect(i, 0, pixelRatio, filter.height);
   }
   filter.endDraw();
 
   background(255);
+  noCursor();
 }
 
 
@@ -52,7 +56,7 @@ void draw() {
     image(l.result, W*.5, H*.5);
   }
 
-  float pos = map(mouseX, 0, W, -W*.5, W*.5);
+  float pos = map(mouseX, 0, W, -W*2, W*2);
   image(filter, pos, H*0.5,W,H);
 
 }
@@ -83,14 +87,16 @@ class Layer {
 
 
     filter.beginDraw();
+    filter.noStroke();
     for (int i = 0; i < filter.width; i+= pixelRatio) {
-      filter.strokeWeight(pixelRatio);
+      //filter.strokeWeight(pixelRatio);
       if (i%numberOfFrames == idx) {
-        filter.stroke(255);
+        filter.fill(255);
       } else {
-        filter.stroke(0);
+        filter.fill(0);
       }
-      filter.line(i, 0, i, filter.height);
+      //filter.line(i, 0, i, filter.height);
+      filter.rect(i, 0, pixelRatio, filter.height);
     }
     filter.endDraw();
 
