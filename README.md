@@ -1,5 +1,7 @@
 # Processing_moire_motion
 
+**[▶ Open the web app](https://b2renger.github.io/Processing_moire_motion/docs/)**: import a video, download the combined image and the grid.
+
 Tools for making barrier-grid animations (also called scanimations or "moiré motion"):
 a combined image made of interleaved strips of several frames, and a black grid with
 clear slits that you lay on top. Slide the grid and the picture moves.
@@ -8,7 +10,7 @@ clear slits that you lay on top. Slide the grid and the picture moves.
 
 ## Web app
 
-**https://b2renger.github.io/Processing_moire_motion/**
+[b2renger.github.io/Processing_moire_motion/docs](https://b2renger.github.io/Processing_moire_motion/docs/)
 
 Runs entirely in the browser, nothing is uploaded.
 
@@ -38,8 +40,8 @@ step one frame).
 
 ### Publishing
 
-The app is the static folder `docs/` (no build step). On GitHub: *Settings → Pages →
-Deploy from a branch → `main` / `/docs`*. It also works by opening
+The app is the static folder `docs/` (no build step). GitHub Pages serves the repo
+root from `main`, so the app is at `/docs/`. It also works by opening
 `docs/index.html` straight from disk.
 
 ## Processing sketch
