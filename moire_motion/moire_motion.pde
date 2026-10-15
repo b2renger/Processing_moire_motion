@@ -1,123 +1,105 @@
+// Moiré motion: a barrier-grid animation ("scanimation") from the frames in data/.
+//
+// Every frame is cut into vertical strips of stripWidth pixels and the strips are
+// interleaved into one combined image. A black grid with one clear strip per
+// period (stripWidth * number of frames) lies on top: sliding it one strip shows
+// the next frame.
+//
+// Frames are read from data/ in file-name order (name them frame01, frame02...).
+// Move the mouse to slide the grid. Keys:
+//   SPACE        play / pause
+//   LEFT, RIGHT  previous / next frame
+//   G            show / hide the grid
+//   S            save combined.png and grid.png in the sketch folder, to print
+//
+// The saved images have the window's size: raise it for print. For curved or
+// radial grids and video import, use the web app in docs/.
 
+int stripWidth = 4;
 
-
-int W = 1080;
-int H = 1080;
-int numberOfFrames =7;
-int pixelRatio = 4;
-
-ArrayList <Layer> layers ;
-PGraphics filter;
+ArrayList<PImage> frames = new ArrayList<PImage>();
+PImage combined, grid;
+int period;
+int offset = 0;
+boolean playing = false;
+boolean showGrid = true;
 
 void settings() {
-  size(W, H);
+  size(1080, 1080);
 }
 
 void setup() {
-
-  layers = new ArrayList<Layer>();
-
-  layers.add(new Layer("frame1.png", 0));
-  layers.add(new Layer("frame2.png", 1));
-  layers.add(new Layer("frame3.png", 2));
-  layers.add(new Layer("frame4.png", 3));
-  layers.add(new Layer("frame5.png", 4));
-  layers.add(new Layer("frame6.png", 5));
-  layers.add(new Layer("frame7.png", 6));
-
-
-  filter = createGraphics(W, H);
-  filter.beginDraw();
-  filter.noStroke();
-  for (int i = 0; i < filter.width; i+= pixelRatio) {
-   // filter.strokeWeight(pixelRatio);
-   
-    if (i%numberOfFrames == 0) {
-      filter.fill(255, 0);
-    } else {
-      filter.fill(0);
+  String[] names = new File(dataPath("")).list();
+  if (names == null) names = new String[0];
+  for (String name : sort(names)) {
+    String n = name.toLowerCase();
+    if (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".gif") || n.endsWith(".tga")) {
+      // on white, so transparent backgrounds print white
+      PGraphics f = createGraphics(width, height);
+      f.beginDraw();
+      f.background(255);
+      f.image(loadImage(name), 0, 0, width, height);
+      f.endDraw();
+      f.loadPixels();
+      frames.add(f);
     }
-    //filter.line(i, 0, i, filter.height);
-    filter.rect(i, 0, pixelRatio, filter.height);
   }
-  filter.endDraw();
+  if (frames.size() < 2) {
+    println("Put at least two frames in the data folder.");
+    exit();
+    return;
+  }
+  int n = frames.size();
+  period = stripWidth * n;
 
-  background(255);
+  // Strip k of every period comes from frame k.
+  combined = createImage(width, height, RGB);
+  combined.loadPixels();
+  for (int x = 0; x < width; x++) {
+    PImage f = frames.get((x / stripWidth) % n);
+    for (int y = 0; y < height; y++) {
+      combined.pixels[y * width + x] = f.pixels[y * width + x];
+    }
+  }
+  combined.updatePixels();
+
+  // Black, with a clear strip where frame 0 is. One period wider than the window
+  // so it still covers everything while it slides.
+  grid = createImage(width + period, height, ARGB);
+  grid.loadPixels();
+  for (int x = 0; x < grid.width; x++) {
+    int c = (x / stripWidth) % n == 0 ? color(0, 0) : color(0);
+    for (int y = 0; y < height; y++) {
+      grid.pixels[y * grid.width + x] = c;
+    }
+  }
+  grid.updatePixels();
+
   noCursor();
 }
 
-
 void draw() {
+  if (playing && frameCount % 6 == 0) offset = (offset + stripWidth) % period;
   background(255);
-  
-  imageMode(CENTER);
-  for (int i = 0; i < layers.size(); i ++) {
-    Layer l = layers.get(i);
-    image(l.result, W*.5, H*.5);
-  }
-
-  float pos = map(mouseX, 0, W, -W*2, W*2);
-  image(filter, pos, H*0.5,W,H);
-
+  image(combined, 0, 0);
+  // the grid moved right by `offset` pixels shows frame offset / stripWidth
+  if (showGrid) image(grid, offset - period, 0);
 }
 
+void mouseMoved() {
+  playing = false;
+  offset = mouseX % period;   // one pixel of mouse = one pixel of grid, like the real thing
+}
 
-class Layer {
-
-  PImage src;
-
-  PGraphics source;
-  PGraphics filter;
-  PGraphics result;
-
-
-
-  Layer(String src, int idx) {
-    this.src = loadImage(src);
-    this.src.resize(W, H);
-
-    result = createGraphics(W, H);
-    source = createGraphics(W, H);
-    filter = createGraphics(W, H);
-
-    source.beginDraw();
-    source.background(255);
-    source.image(this.src, 0, 0, source.width, source.height);
-    source.endDraw();
-
-
-    filter.beginDraw();
-    filter.noStroke();
-    for (int i = 0; i < filter.width; i+= pixelRatio) {
-      //filter.strokeWeight(pixelRatio);
-      if (i%numberOfFrames == idx) {
-        filter.fill(255);
-      } else {
-        filter.fill(0);
-      }
-      //filter.line(i, 0, i, filter.height);
-      filter.rect(i, 0, pixelRatio, filter.height);
-    }
-    filter.endDraw();
-
-    do_blend();
-  }
-
-  void do_blend() {
-    result.beginDraw();
-
-    for (int i = 0; i <result.width; i++) {
-      for (int j = 0; j <result.height; j++) {
-
-        color cFilter = filter.get(i, j);
-        color cSource = source.get(i, j);
-
-        if (red(cFilter)> 0) {
-          result.set(i, j, cSource);
-        }
-      }
-    }
-
-    result.endDraw();
+void keyPressed() {
+  if (key == ' ') playing = !playing;
+  if (key == 'g' || key == 'G') showGrid = !showGrid;
+  if (keyCode == RIGHT) offset = (offset / stripWidth + 1) % frames.size() * stripWidth;
+  if (keyCode == LEFT) offset = (offset / stripWidth + frames.size() - 1) % frames.size() * stripWidth;
+  if (keyCode == LEFT || keyCode == RIGHT) playing = false;
+  if (key == 's' || key == 'S') {
+    combined.save(sketchPath("combined.png"));
+    grid.save(sketchPath("grid.png"));
+    println("Saved combined.png and grid.png in " + sketchPath());
   }
 }
